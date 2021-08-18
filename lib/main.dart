@@ -178,51 +178,47 @@ class _PageState extends State<Page> with SingleTickerProviderStateMixin {
   }
 
   registrationScreen(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height,
-      width: MediaQuery.of(context).size.width,
-      child: CustomScrollView(
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate([
-              SizedBox(height: 32),
-              ItemFader(key: keys[0], child: StepNumber(number: widget.number)),
-              ItemFader(
-                key: keys[1],
-                child: StepQuestion(question: widget.question),
-              ),
-              SizedBox(
-                height: 50,
-              ),
-              Spacer(),
-              ...widget.answers.map((String answer) {
-                int answerIndex = widget.answers.indexOf(answer);
-                int keyIndex = answerIndex;
-                return Column(
-                  children: [
-                    ItemFader(
-                      key: keys[2],
-                      child: Registration(),
+    return CustomScrollView(
+      slivers: [
+        SliverList(
+          delegate: SliverChildListDelegate([
+            SizedBox(height: 32),
+            ItemFader(key: keys[0], child: StepNumber(number: widget.number)),
+            ItemFader(
+              key: keys[1],
+              child: StepQuestion(question: widget.question),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+            Spacer(),
+            ...widget.answers.map((String answer) {
+              int answerIndex = widget.answers.indexOf(answer);
+              int keyIndex = answerIndex;
+              return Column(
+                children: [
+                  ItemFader(
+                    key: keys[2],
+                    child: Registration(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ItemFader(
+                    key: keys[3],
+                    child: OptionItem(
+                      name: answer,
+                      onTap: (offset) => onTap(keyIndex, offset),
+                      showDot: selectedOptionKeyIndex != keyIndex,
                     ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    ItemFader(
-                      key: keys[3],
-                      child: OptionItem(
-                        name: answer,
-                        onTap: (offset) => onTap(keyIndex, offset),
-                        showDot: selectedOptionKeyIndex != keyIndex,
-                      ),
-                    ),
-                  ],
-                );
-              }),
-              SizedBox(height: 64),
-            ]),
-          )
-        ],
-      ),
+                  ),
+                ],
+              );
+            }),
+            SizedBox(height: 64),
+          ]),
+        )
+      ],
     );
   }
 
@@ -545,9 +541,6 @@ class OptionItem extends StatefulWidget {
 class _OptionItemState extends State<OptionItem> {
   @override
   Widget build(BuildContext context) {
-    // print('name -> ${widget.name}');
-    // print('onTap -> ${widget.onTap}');
-    // print('showDot -> ${widget.showDot}');
     return InkWell(
       onTap: () {
         RenderBox object = context.findRenderObject();
