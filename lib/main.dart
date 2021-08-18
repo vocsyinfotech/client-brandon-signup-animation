@@ -1,4 +1,9 @@
+import 'package:flight_survey/ProfileUpdation.dart';
+import 'package:flight_survey/Registration.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'Showcase.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -21,22 +26,40 @@ class _FlightsStepperState extends State<FlightsStepper> {
         ? Page(
             key: Key('page1'),
             onOptionSelected: () => setState(() => pageNumber = 2),
-            question:
-                'Do you typically fly for business, personal reasons, or some other reason?',
-            answers: <String>['Business', 'Personal', 'Others'],
+            question: 'Registration',
+            answers: <String>['Next'],
             number: 1,
           )
-        : Page(
-            key: Key('page2'),
-            onOptionSelected: () => setState(() => pageNumber = 1),
-            question: 'How many hours is your average flight?',
-            answers: <String>[
-              'Less than two hours',
-              'More than two but less than five hours',
-              'Others'
-            ],
-            number: 2,
-          );
+        : pageNumber == 2
+            ? Page(
+                onOptionSelected: () => setState(() => pageNumber = 3),
+                question: 'Profile Updation',
+                answers: <String>[
+                  'Next',
+                ],
+                number: 2,
+              )
+            : pageNumber == 3
+                ? Page(
+                    key: Key('page3'),
+                    onOptionSelected: () => setState(() => pageNumber = 4),
+                    question: 'Information',
+                    answers: <String>[
+                      'Show Data',
+                    ],
+                    number: 3,
+                  )
+                : pageNumber == 4
+                    ? Page(
+                        key: Key('page4'),
+                        onOptionSelected: () => setState(() => pageNumber = 1),
+                        question: 'ShowCase',
+                        answers: <String>[
+                          'Register',
+                        ],
+                        number: 4,
+                      )
+                    : null;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -45,7 +68,7 @@ class _FlightsStepperState extends State<FlightsStepper> {
         child: SafeArea(
           child: Stack(
             children: <Widget>[
-              ArrowIcons(),
+              // ArrowIcons(),
               Plane(),
               Line(),
               Positioned.fill(
@@ -82,7 +105,7 @@ class Page extends StatefulWidget {
   final List<String> answers;
   final VoidCallback onOptionSelected;
 
-  const Page(
+  Page(
       {Key key,
       @required this.onOptionSelected,
       @required this.number,
@@ -98,12 +121,16 @@ class _PageState extends State<Page> with SingleTickerProviderStateMixin {
   List<GlobalKey<_ItemFaderState>> keys;
   int selectedOptionKeyIndex;
   AnimationController _animationController;
+  TextEditingController locationController =
+      new TextEditingController(text: '');
+  TextEditingController informationController =
+      new TextEditingController(text: '');
 
   @override
   void initState() {
     super.initState();
     keys = List.generate(
-      2 + widget.answers.length,
+      4 + widget.answers.length,
       (_) => GlobalKey<_ItemFaderState>(),
     );
     _animationController = AnimationController(
@@ -138,6 +165,68 @@ class _PageState extends State<Page> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // print('pageee = ${widget.number}');
+    return widget.number == 1
+        ? registrationScreen(context)
+        : widget.number == 2
+            ? profileUpdationScreen(context)
+            : widget.number == 3
+                ? informationScreen(context)
+                : widget.number == 4
+                    ? showcase(context)
+                    : Container();
+  }
+
+  registrationScreen(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      child: CustomScrollView(
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate([
+              SizedBox(height: 32),
+              ItemFader(key: keys[0], child: StepNumber(number: widget.number)),
+              ItemFader(
+                key: keys[1],
+                child: StepQuestion(question: widget.question),
+              ),
+              SizedBox(
+                height: 50,
+              ),
+              Spacer(),
+              ...widget.answers.map((String answer) {
+                int answerIndex = widget.answers.indexOf(answer);
+                int keyIndex = answerIndex;
+                return Column(
+                  children: [
+                    ItemFader(
+                      key: keys[2],
+                      child: Registration(),
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    ItemFader(
+                      key: keys[3],
+                      child: OptionItem(
+                        name: answer,
+                        onTap: (offset) => onTap(keyIndex, offset),
+                        showDot: selectedOptionKeyIndex != keyIndex,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              SizedBox(height: 64),
+            ]),
+          )
+        ],
+      ),
+    );
+  }
+
+  showcase(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -147,22 +236,240 @@ class _PageState extends State<Page> with SingleTickerProviderStateMixin {
           key: keys[1],
           child: StepQuestion(question: widget.question),
         ),
-        Spacer(),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.1,
+        ),
         ...widget.answers.map((String answer) {
           int answerIndex = widget.answers.indexOf(answer);
-          int keyIndex = answerIndex + 2;
-          return ItemFader(
-            key: keys[keyIndex],
-            child: OptionItem(
-              name: answer,
-              onTap: (offset) => onTap(keyIndex, offset),
-              showDot: selectedOptionKeyIndex != keyIndex,
-            ),
+          int keyIndex = answerIndex;
+          return Column(
+            children: [
+              ItemFader(
+                key: keys[2],
+                child: Showcase(),
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.1,
+              ),
+              ItemFader(
+                key: keys[3],
+                child: OptionItem(
+                  name: answer,
+                  onTap: (offset) => onTap(keyIndex, offset),
+                  showDot: selectedOptionKeyIndex != keyIndex,
+                ),
+              ),
+            ],
           );
         }),
         SizedBox(height: 64),
       ],
     );
+  }
+
+  profileUpdationScreen(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          ItemFader(key: keys[0], child: StepNumber(number: widget.number)),
+          ItemFader(
+            key: keys[1],
+            child: StepQuestion(question: widget.question),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.1,
+          ),
+          ...widget.answers.map((String answer) {
+            int answerIndex = widget.answers.indexOf(answer);
+            int keyIndex = answerIndex;
+            return Column(
+              children: [
+                ItemFader(
+                  key: keys[2],
+                  child: ProfileUpdation(),
+                ),
+                SizedBox(
+                  height: 25,
+                ),
+                ItemFader(
+                    key: keys[3],
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 15),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: TextFormField(
+                            onChanged: (value) async {
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              setState(() {
+                                prefs.setString('location', value);
+                              });
+                            },
+                            enabled: true,
+                            controller: locationController,
+                            autofocus: false,
+                            decoration: new InputDecoration(
+                              hintText: 'Location',
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 15, horizontal: 15),
+                              hintStyle: TextStyle(
+                                  color: Colors.white54,
+                                  fontFamily: "Nunito",
+                                  fontWeight: FontWeight.w700),
+                              fillColor: Colors.white54,
+                              border: OutlineInputBorder(
+                                gapPadding: 5,
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(
+                                    color: Color(0xffffffff), width: 3),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(
+                                    color: Color(0xffF4ADB3), width: 2.0),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15.0),
+                                borderSide: BorderSide(
+                                    color: Color(0xffffffff), width: 3),
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontFamily: "Poppins",
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.17,
+                ),
+                ItemFader(
+                  key: keys[4],
+                  child: OptionItem(
+                    name: answer,
+                    onTap: (offset) => onTap(keyIndex, offset),
+                    showDot: selectedOptionKeyIndex != keyIndex,
+                  ),
+                ),
+              ],
+            );
+          }),
+          SizedBox(height: 64),
+        ],
+      ),
+    );
+  }
+
+  informationScreen(BuildContext context) {
+    return CustomScrollView(slivers: [
+      SliverList(
+          delegate: SliverChildListDelegate(
+        [
+          SizedBox(height: 32),
+          ItemFader(key: keys[0], child: StepNumber(number: widget.number)),
+          ItemFader(
+            key: keys[1],
+            child: StepQuestion(question: widget.question),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.1,
+          ),
+          ...widget.answers.map((String answer) {
+            int answerIndex = widget.answers.indexOf(answer);
+            int keyIndex = answerIndex;
+            return Column(
+              children: [
+                ItemFader(
+                    key: keys[2],
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 15),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextFormField(
+                                onChanged: (value) async {
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  setState(() {
+                                    prefs.setString('information', value);
+                                  });
+                                },
+                                maxLines: 6,
+                                enabled: true,
+                                controller: informationController,
+                                autofocus: false,
+                                decoration: new InputDecoration(
+                                  hintText: 'Information',
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                      vertical: 15, horizontal: 15),
+                                  hintStyle: TextStyle(
+                                      color: Colors.white54,
+                                      fontFamily: "Nunito",
+                                      fontWeight: FontWeight.w700),
+                                  fillColor: Colors.white54,
+                                  border: OutlineInputBorder(
+                                    gapPadding: 5,
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderSide: BorderSide(
+                                        color: Color(0xffffffff), width: 3),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderSide: BorderSide(
+                                        color: Color(0xffF4ADB3), width: 2.0),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderSide: BorderSide(
+                                        color: Color(0xffffffff), width: 3),
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  fontFamily: "Poppins",
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.2,
+                ),
+                ItemFader(
+                  key: keys[3],
+                  child: OptionItem(
+                    name: answer,
+                    onTap: (offset) => onTap(keyIndex, offset),
+                    showDot: selectedOptionKeyIndex != keyIndex,
+                  ),
+                ),
+              ],
+            );
+          }),
+          SizedBox(height: 64),
+        ],
+      ))
+    ]);
   }
 
   void onTap(int keyIndex, Offset offset) async {
@@ -238,6 +545,9 @@ class OptionItem extends StatefulWidget {
 class _OptionItemState extends State<OptionItem> {
   @override
   Widget build(BuildContext context) {
+    // print('name -> ${widget.name}');
+    // print('onTap -> ${widget.onTap}');
+    // print('showDot -> ${widget.showDot}');
     return InkWell(
       onTap: () {
         RenderBox object = context.findRenderObject();
@@ -251,11 +561,9 @@ class _OptionItemState extends State<OptionItem> {
             SizedBox(width: 26),
             Dot(visible: widget.showDot),
             SizedBox(width: 26),
-            Expanded(
-              child: Text(
-                widget.name,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
-              ),
+            Text(
+              widget.name,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
             )
           ],
         ),
